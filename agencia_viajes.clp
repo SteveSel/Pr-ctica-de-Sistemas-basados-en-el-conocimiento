@@ -1,25 +1,4 @@
-;; ======================================================================
-;; AGENCIA DE VIAJES AL FIN DEL MUNDO Y MÁS ALLÁ
-;; Sistema Basado en el Conocimiento — Prototipo Intermedio
-;; CLIPS — Práctica SBC 2025/2026 2Q
-;;
-;; MÓDULOS (en orden de ejecución):
-;;   1. Ontología (deftemplates)
-;;   2. Base de conocimiento (catálogo)
-;;   3. Interfaz — preguntas al usuario
-;;   4. Creación del hecho Usuario
-;;   5. Deducción — inferir Perfil
-;;   6. Construcción Plan 1
-;;   7. Construcción Plan 2 (ciudades distintas)
-;;   8. Asignación de lugares a visitar
-;;   9. Presentación de resultados
-;;  10. Manejo de casos sin solución
-;; ======================================================================
-
-
-;; ======================================================================
-;; 1. ONTOLOGÍA — DEFTEMPLATES
-;; ======================================================================
+;; ONTOLOGÍA
 
 (deftemplate Usuario
     (slot motivo          (type SYMBOL)
@@ -38,7 +17,6 @@
           (allowed-symbols Economico Estandar Lujo) (default Estandar))
 )
 
-;; Perfil inferido: parámetros de planificación derivados por razonamiento
 (deftemplate Perfil
     (slot motivo_efectivo   (type SYMBOL)   (default Generico))
     (slot max_ciudades      (type INTEGER)  (default 2))
@@ -84,7 +62,6 @@
     (slot horas_viaje    (type FLOAT))
 )
 
-;; Una Etapa = visita a una ciudad en un plan de viaje
 (deftemplate Etapa
     (slot plan_id            (type INTEGER))
     (slot orden              (type INTEGER))
@@ -110,13 +87,11 @@
           (allowed-symbols Construyendo Completo Fallido) (default Construyendo))
 )
 
-;; Marcador para evitar reutilizar ciudades entre planes
 (deftemplate CiudadUsada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
 )
 
-;; Acumuladores de construcción de un plan
 (deftemplate EstadoPlan
     (slot plan_id       (type INTEGER))
     (slot dias_usados   (type INTEGER) (default 0))
@@ -126,13 +101,11 @@
 )
 
 
-;; ======================================================================
-;; 2. BASE DE CONOCIMIENTO — CATÁLOGO
-;; ======================================================================
+;; BASE DE CONOCIMIENTO
 
 (deffacts Catalogo
 
-    ;; --- CIUDADES ---
+    ;; CIUDADES
     (Ciudad (nombre "Paris")       (region Europa)  (tematica Romantico)  (nivel_vida Alto)  (distancia Corta) (apta_ninos si))
     (Ciudad (nombre "Santorini")   (region Europa)  (tematica Romantico)  (nivel_vida Alto)  (distancia Corta) (apta_ninos no))
     (Ciudad (nombre "Lisboa")      (region Europa)  (tematica Romantico)  (nivel_vida Bajo)  (distancia Corta) (apta_ninos si))
@@ -153,7 +126,7 @@
     (Ciudad (nombre "Bangkok")     (region Asia)    (tematica Diversion)  (nivel_vida Bajo)  (distancia Larga) (apta_ninos si))
     (Ciudad (nombre "Nueva York")  (region America) (tematica Diversion)  (nivel_vida Alto)  (distancia Larga) (apta_ninos si))
 
-    ;; --- LUGARES A VISITAR ---
+    ;; LUGARES A VISITAR
     (LugarVisita (nombre "Torre Eiffel")           (ciudad "Paris")      (interes Romantico)  (horas 3))
     (LugarVisita (nombre "Museo del Louvre")       (ciudad "Paris")      (interes Cultural)   (horas 4))
     (LugarVisita (nombre "Montmartre")             (ciudad "Paris")      (interes Romantico)  (horas 2))
@@ -207,7 +180,7 @@
     (LugarVisita (nombre "Metropolitan Museum")    (ciudad "Nueva York") (interes Cultural)   (horas 4))
     (LugarVisita (nombre "Times Square")           (ciudad "Nueva York") (interes Ocio)       (horas 2))
 
-    ;; --- ALOJAMIENTOS (precio por noche) ---
+    ;; ALOJAMIENTOS
     (Alojamiento (nombre "Hotel Lumiere 5*")        (ciudad "Paris")      (categoria Lujo)      (precio_noche 350.0) (apto_ninos si))
     (Alojamiento (nombre "Hotel Seine 3*")          (ciudad "Paris")      (categoria Estandar)  (precio_noche 150.0) (apto_ninos si))
     (Alojamiento (nombre "Hostal Montparnasse")     (ciudad "Paris")      (categoria Economico) (precio_noche 60.0)  (apto_ninos si))
@@ -257,8 +230,8 @@
     (Alojamiento (nombre "Plaza Hotel 5*")          (ciudad "Nueva York") (categoria Lujo)      (precio_noche 500.0) (apto_ninos si))
     (Alojamiento (nombre "Hotel Times Square 3*")   (ciudad "Nueva York") (categoria Estandar)  (precio_noche 180.0) (apto_ninos si))
 
-    ;; --- TRANSPORTES (precio por persona) ---
-    ;; Desde el origen del viajero (asumimos España/Barcelona)
+    ;; TRANSPORTES
+    ;; Desde el origen del viajero
     (Transporte (origen "Origen") (destino "Paris")      (tipo Avion) (precio_persona 120.0) (horas_viaje 2.0))
     (Transporte (origen "Origen") (destino "Santorini")  (tipo Avion) (precio_persona 160.0) (horas_viaje 3.5))
     (Transporte (origen "Origen") (destino "Lisboa")     (tipo Avion) (precio_persona 100.0) (horas_viaje 2.5))
@@ -347,18 +320,16 @@
 )
 
 
-;; ======================================================================
-;; 3. MÓDULO DE INTERFAZ — PREGUNTAS AL USUARIO
-;; ======================================================================
+;; PREGUNTAS AL USUARIO
 
 (defrule Iniciar_Sistema
     ?f <- (fase inicio)
     =>
     (retract ?f)
-    (printout t "==========================================================" crlf)
+    (printout t "----------------------------------------------------------" crlf)
     (printout t "   BIENVENIDO A LA AGENCIA DE VIAJES AL FIN DEL MUNDO    " crlf)
     (printout t "      Y MAS ALLA - Sistema Experto de Recomendacion       " crlf)
-    (printout t "==========================================================" crlf)
+    (printout t "----------------------------------------------------------" crlf)
     (printout t crlf)
     (assert (fase p1_composicion))
 )
@@ -479,9 +450,7 @@
 )
 
 
-;; ======================================================================
-;; 4. CREACIÓN DEL HECHO USUARIO
-;; ======================================================================
+;; CREACIÓN DEL HECHO USUARIO
 
 (defrule Crear_Usuario
     ?f <- (fase crear_usuario)
@@ -507,14 +476,9 @@
 )
 
 
-;; ======================================================================
-;; 5. MÓDULO DE DEDUCCIÓN — INFERIR PERFIL
-;;
-;; Razonamiento experto: se producen hechos auxiliares que luego se
-;; consolidarán en el hecho Perfil.
-;; ======================================================================
+;; DEDUCIR PERFIL
 
-;; Regla experta: viaje romántico con niños → destinos culturales/familiares
+;; Regla: viaje romántico con niños -> destinos culturales/familiares
 (defrule Deducir_Ajuste_Romantico_Ninos
     (fase deduccion)
     (Usuario (motivo Romantico) (con_ninos si))
@@ -531,7 +495,7 @@
     (assert (motivo_efectivo ?mot))
 )
 
-;; Radio del viaje: determina si puede ir a destinos lejanos
+;; Deducir distancia del viaje
 (defrule Deducir_Radio_Corto
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 5)))
@@ -553,7 +517,7 @@
     (assert (radio_viaje Largo))
 )
 
-;; Número máximo de ciudades (no tiene sentido visitar muchas con pocos días)
+;; Deducir número de ciudades
 (defrule Deducir_Max_Ciudades_1
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 4)))
@@ -604,7 +568,7 @@
     (assert (presupuesto_nivel Alto))
 )
 
-;; Consolidar el Perfil cuando todos los hechos auxiliares están disponibles
+;; Consolidar el Perfil cuando todas las preguntas hayan sido contestadas
 (defrule Consolidar_Perfil
     ?f <- (fase deduccion)
     (motivo_efectivo   ?mot)
@@ -629,13 +593,7 @@
 )
 
 
-;; ======================================================================
-;; 6. CONSTRUCCIÓN DEL PLAN 1
-;;
-;; Se usa el hecho EstadoPlan como acumulador del plan en construcción.
-;; La primera ciudad debe coincidir con el motivo del perfil.
-;; Las ciudades adicionales se eligen por disponibilidad de transporte.
-;; ======================================================================
+;; PLAN 1
 
 (defrule Iniciar_Plan1
     ?f <- (fase construir_plan_1)
@@ -647,7 +605,7 @@
     (assert (fase elegir_ciudad1_p1))
 )
 
-;; Primera ciudad del plan 1: coincide con el motivo del perfil
+;; La primera ciudad del plan 1 coincide con el motivo del perfil
 (defrule Elegir_Ciudad1_P1
     ?f  <- (fase elegir_ciudad1_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -682,7 +640,7 @@
     (assert (fase ampliar_p1))
 )
 
-;; Ampliar el plan 1 con ciudades adicionales
+;; Ampliamos el plan 1 con ciudades adicionales
 (defrule Ampliar_P1
     ?f  <- (fase ampliar_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -700,11 +658,11 @@
     (not (CiudadUsada (plan_id 1) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
-    (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
+    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
+    (test (> ?dias_nueva 0))
+    (test (<= (+ ?ca ?pt (* ?pn ?dias_nueva)) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
-    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 1) (ciudad ?c)))
     (assert (Etapa (plan_id 1) (orden ?no) (ciudad ?c) (dias ?dias_nueva)
@@ -719,7 +677,7 @@
     (assert (fase ampliar_p1))
 )
 
-;; Cerrar el plan 1 y añadir vuelo de vuelta
+;; Cerramos el plan 1 y añadimos el vuelo de vuelta
 (defrule Cerrar_P1
     ?f  <- (fase ampliar_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -742,18 +700,16 @@
     =>
     (retract ?f)
     (printout t crlf)
-    (printout t "========================================================" crlf)
-    (printout t " Lo sentimos: no encontramos ningun viaje que cumpla    " crlf)
-    (printout t " sus restricciones de presupuesto, dias y preferencias. " crlf)
-    (printout t " Pruebe a aumentar el presupuesto o los dias de viaje.  " crlf)
-    (printout t "========================================================" crlf)
+    (printout t "-------------------------------------------------------" crlf)
+    (printout t " Lo sentimos: no encontramos ningun viaje que cumpla   " crlf)
+    (printout t " sus restricciones de presupuesto, dias y preferencias." crlf)
+    (printout t " Pruebe a aumentar el presupuesto o los dias de viaje. " crlf)
+    (printout t "-------------------------------------------------------" crlf)
     (assert (fase fin))
 )
 
 
-;; ======================================================================
-;; 7. CONSTRUCCIÓN DEL PLAN 2 (ciudades diferentes al plan 1)
-;; ======================================================================
+;; CONSTRUCCIÓN DEL PLAN 2 (diferente del 1)
 
 (defrule Iniciar_Plan2
     ?f <- (fase construir_plan_2)
@@ -765,7 +721,7 @@
     (assert (fase elegir_ciudad1_p2))
 )
 
-;; Primera ciudad del plan 2: diferente a todas las del plan 1
+;; Primera ciudad del plan 2
 (defrule Elegir_Ciudad1_P2
     ?f  <- (fase elegir_ciudad1_p2)
     ?ep <- (EstadoPlan (plan_id 2) (dias_usados ?du) (coste_acum ?ca)
@@ -819,11 +775,11 @@
     (not (CiudadUsada (plan_id 2) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
-    (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
+    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
+    (test (> ?dias_nueva 0))
+    (test (<= (+ ?ca ?pt (* ?pn ?dias_nueva)) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
-    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 2) (ciudad ?c)))
     (assert (Etapa (plan_id 2) (orden ?no) (ciudad ?c) (dias ?dias_nueva)
@@ -853,7 +809,7 @@
     (assert (fase asignar_visitas))
 )
 
-;; Sin segunda alternativa: pasar igualmente a visitas y presentación
+;; Sin segunda alternativa de viaje
 (defrule SinSolucion_P2
     ?f <- (fase elegir_ciudad1_p2)
     (not (Etapa (plan_id 2)))
@@ -864,12 +820,7 @@
 )
 
 
-;; ======================================================================
-;; 8. ASIGNACIÓN DE LUGARES A VISITAR
-;;
-;; Por cada etapa se asignan hasta 3 lugares compatibles con el motivo.
-;; Cultural y Naturaleza siempre son de interés universal.
-;; ======================================================================
+;; ASIGNACIÓN DE LUGARES A VISITAR
 
 (defrule Asignar_Visita
     (fase asignar_visitas)
@@ -895,18 +846,15 @@
     (assert (fase presentar_resultados))
 )
 
-
-;; ======================================================================
-;; 9. MÓDULO DE PRESENTACIÓN DE RESULTADOS
-;; ======================================================================
+;; RESULTADOS
 
 (defrule Presentar_Cabecera
     ?f <- (fase presentar_resultados)
     =>
     (retract ?f)
-    (printout t "==========================================================" crlf)
+    (printout t "----------------------------------------------------------" crlf)
     (printout t "           SUS RECOMENDACIONES DE VIAJE                  " crlf)
-    (printout t "==========================================================" crlf)
+    (printout t "----------------------------------------------------------" crlf)
     (assert (fase mostrar_plan 1))
 )
 
@@ -953,7 +901,7 @@
      else (assert (fase mostrar_preferencias)))
 )
 
-;; Si el plan 2 no existe, saltar a preferencias
+;; Si el plan 2 no existe vamos a preferencias
 (defrule Saltar_Plan2_Inexistente
     ?f <- (fase mostrar_plan 2)
     (not (PlanViaje (plan_id 2) (estado Completo)))
@@ -971,7 +919,7 @@
     =>
     (retract ?f)
     (printout t crlf)
-    (printout t "--- PERFIL Y PREFERENCIAS CONTEMPLADAS ---" crlf)
+    (printout t "--- PERFIL Y PREFERENCIAS ---" crlf)
     (printout t "    Motivo solicitado   : " ?mot crlf)
     (printout t "    Motivo aplicado     : " ?mef crlf)
     (printout t "    Composicion         : " ?comp crlf)
@@ -982,12 +930,5 @@
     (printout t "    Transporte preferido: " ?tr crlf)
     (printout t "    Radio de viaje      : " ?radio crlf)
     (printout t crlf)
-    (printout t "==========================================================" crlf)
-    (printout t "   iQue tenga un excelente viaje!                        " crlf)
-    (printout t "==========================================================" crlf)
     (assert (fase fin))
 )
-
-;; ======================================================================
-;; FIN DEL SISTEMA
-;; ======================================================================
