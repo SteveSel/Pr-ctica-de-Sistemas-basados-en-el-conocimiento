@@ -19,8 +19,7 @@
           (allowed-symbols Economico Estandar Lujo) (default Estandar))
 )
 
-;; Perfil inferido por el sistema a partir del Usuario.
-;; Es rellanado por reglas del modulo de deduccion
+;; Perfil deducido por el sistema a partir del Usuario
 (deftemplate Perfil
     (slot motivo_efectivo   (type SYMBOL)   (default Generico))
     (slot max_ciudades      (type INTEGER)  (default 2))
@@ -31,7 +30,7 @@
           (allowed-symbols Bajo Medio Alto)  (default Medio))
 )
 
-;; Destino turístico del catálogo.
+;; Destino turístico del catálogo
 (deftemplate Ciudad
     (slot nombre     (type STRING))
     (slot region     (type SYMBOL)
@@ -43,7 +42,7 @@
     (slot apta_ninos (type SYMBOL) (allowed-symbols si no))
 )
 
-;; Atracción turística asociada a una ciudad.
+;; Atracción turística asociada a una ciudad
 (deftemplate LugarVisita
     (slot nombre  (type STRING))
     (slot ciudad  (type STRING))
@@ -52,7 +51,7 @@
     (slot horas   (type INTEGER) (default 2))
 )
 
-;; Alojamiento disponible en una ciudad.
+;; Alojamiento disponible en una ciudad
 (deftemplate Alojamiento
     (slot nombre       (type STRING))
     (slot ciudad       (type STRING))
@@ -61,7 +60,7 @@
     (slot apto_ninos   (type SYMBOL) (allowed-symbols si no))
 )
 
-;; Coneccion de transporte entre 2 puntos.
+;; Coneccion de transporte entre 2 puntos
 (deftemplate Transporte
     (slot origen         (type STRING))
     (slot destino        (type STRING))
@@ -70,7 +69,7 @@
     (slot horas_viaje    (type FLOAT))
 )
 
-;; Una ciudad visitada dentro de un plan, con sus costes y detalles de estancia.
+;; Una ciudad visitada dentro de un plan, con sus costes y detalles de estancia
 (deftemplate Etapa
     (slot plan_id            (type INTEGER))
     (slot orden              (type INTEGER))
@@ -82,14 +81,14 @@
     (slot coste_transporte   (type FLOAT))
 )
 
-;; Lugar de visita ya asignado a una etapa concreta de un plan.
+;; Lugar de visita ya asignado a una etapa concreta de un plan
 (deftemplate VisitaAsignada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
     (slot lugar   (type STRING))
 )
 
-;; Cabecera del plan resultado con coste total, días y estado de construcción.
+;; Cabecera del plan resultado con coste total, días y estado de construcción
 (deftemplate PlanViaje
     (slot plan_id     (type INTEGER))
     (slot coste_total (type FLOAT)   (default 0.0))
@@ -98,14 +97,14 @@
           (allowed-symbols Construyendo Completo Fallido) (default Construyendo))
 )
 
-;; Marcador que registra qué ciudades ya han sido incluidas en un plan.
-;; Impide repetir ciudades dentro del mismo plan y entre los dos planes.
+;; Marcador que registra qué ciudades ya han sido incluidas en un plan
+;; Impide repetir ciudades dentro del mismo plan y entre los dos planes
 (deftemplate CiudadUsada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
 )
 
-;; Acumulador mutable del estado de construcción de un plan en curso.
+;; Acumulador mutable del estado de construcción de un plan en curso
 (deftemplate EstadoPlan
     (slot plan_id       (type INTEGER))
     (slot dias_usados   (type INTEGER) (default 0))
@@ -348,7 +347,7 @@
     (assert (fase p1_composicion))
 )
 
-;; P1: Pregunta la composición del grupo.
+;; P1: Pregunta la composición del grupo
 (defrule P1_Composicion
     ?f <- (fase p1_composicion)
     =>
@@ -368,7 +367,7 @@
     (assert (fase p2_ninos))
 )
 
-;; P2a: Solo se pregunta por niños si el grupo es Familia o Grupo.
+;; P2a: Solo se pregunta por niños si el grupo es Familia o Grupo
 (defrule P2_Ninos_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(or (eq ?c Familia) (eq ?c Grupo)))
@@ -380,7 +379,7 @@
     (assert (fase p3_motivo))
 )
 
-;; P2b: Si viaja Solo o en Pareja, se asume automáticamente que no hay niños.
+;; P2b: Si viaja Solo o en Pareja, se asume automáticamente que no hay niños
 (defrule P2_Ninos_No_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(and (neq ?c Familia) (neq ?c Grupo)))
@@ -474,8 +473,8 @@
 
 ;; CREACIÓN DEL HECHO USUARIO
 
-;; Consolida todas las respuestas (resp_X) en un único hecho Usuario estructurado.
-;; Solo dispara cuando los 7 hechos de respuesta están presentes simultáneamente.
+;; Consolida todas las respuestas (resp_X) en un único hecho Usuario estructurado
+;; Solo dispara cuando los 7 hechos de respuesta están presentes simultáneamente
 (defrule Crear_Usuario
     ?f <- (fase crear_usuario)
     (resp_motivo      ?mot)
@@ -511,7 +510,7 @@
     (printout t "[Deduccion] Viaje romantico con ninos -> ajustado a Cultural." crlf)
 )
 
-;; Si no aplica el ajuste anterior, el motivo efectivo es el declarado.
+;; Si no aplica el ajuste anterior, el motivo efectivo es el declarado
 (defrule Deducir_Motivo_Sin_Cambio
     (fase deduccion)
     (Usuario (motivo ?mot) (con_ninos ?n))
@@ -521,7 +520,7 @@
 )
 
 ;; Deducir distancia del viaje
-;; Radio Corto: <= 5 días. No vale la pena volar >3h para estancias muy cortas.
+;; Radio Corto: <= 5 días. No vale la pena volar >3h para estancias muy cortas
 (defrule Deducir_Radio_Corto
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 5)))
@@ -603,7 +602,7 @@
     (assert (presupuesto_nivel Alto))
 )
 
-;; Consolidar el Perfil cuando todas las preguntas hayan sido contestadas
+;; Deduce el Perfil cuando todas las preguntas han sido contestadas
 (defrule Consolidar_Perfil
     ?f <- (fase deduccion)
     (motivo_efectivo   ?mot)
@@ -699,11 +698,13 @@
     (not (CiudadUsada (plan_id 1) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
-    (test (> ?dias_nueva 0))
-    (test (<= (+ ?ca ?pt (* ?pn ?dias_nueva)) (* ?pmax 0.9)))
+    ;; bind no puede usarse en el LHS: las condiciones se evaluan inline en test
+    (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
+    (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
+    ;; Una vez en el RHS calculamos dias_nueva con bind normalmente
+    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 1) (ciudad ?c)))
     (assert (Etapa (plan_id 1) (orden ?no) (ciudad ?c) (dias ?dias_nueva)
@@ -817,11 +818,13 @@
     (not (CiudadUsada (plan_id 2) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
-    (test (> ?dias_nueva 0))
-    (test (<= (+ ?ca ?pt (* ?pn ?dias_nueva)) (* ?pmax 0.9)))
+    ;; bind no puede usarse en el LHS: las condiciones se evaluan inline en test
+    (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
+    (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
+    ;; Una vez en el RHS calculamos dias_nueva con bind normalmente
+    (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 2) (ciudad ?c)))
     (assert (Etapa (plan_id 2) (orden ?no) (ciudad ?c) (dias ?dias_nueva)
@@ -864,10 +867,10 @@
 
 ;; ASIGNACIÓN DE LUGARES A VISITAR
 
-;; Asigna lugares de visita a cada etapa por afinidad temática con el motivo efectivo.
-;; Cultural y Naturaleza se consideran de interés universal y siempre se incluyen.
+;; Asigna lugares de visita a cada etapa por afinidad temática con el motivo efectivo
+;; Cultural y Naturaleza se consideran de interés universal y siempre se incluyen
 ;; El límite de 3 visitas por ciudad se implementa con negación anidada:
-;; la regla no dispara si ya existen 3 visitas distintas para esa ciudad y plan.
+;; la regla no dispara si ya existen 3 visitas distintas para esa ciudad y plan
 (defrule Asignar_Visita
     (fase asignar_visitas)
     (Perfil (motivo_efectivo ?mot))
@@ -968,7 +971,7 @@
     (printout t crlf)
     (printout t "--- PERFIL Y PREFERENCIAS ---" crlf)
     (printout t "    Motivo solicitado   : " ?mot crlf)
-    (printout t "    Motivo aplicado     : " ?mef crlf)
+    (printout t "    Motivo deducido     : " ?mef crlf)
     (printout t "    Composicion         : " ?comp crlf)
     (printout t "    Con ninos           : " ?nin crlf)
     (printout t "    Dias disponibles    : " ?d crlf)
