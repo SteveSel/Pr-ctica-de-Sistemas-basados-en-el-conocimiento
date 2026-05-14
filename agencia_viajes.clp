@@ -1,5 +1,7 @@
 ;; ONTOLOGÍA
 
+;; Datos recogidos directamente del usuario mediante las preguntas del sistema.
+;; Todos los slots tienen default para evitar errores si alguna respuesta falla.
 (deftemplate Usuario
     (slot motivo          (type SYMBOL)
           (allowed-symbols Romantico Cultural Relax Diversion Desconocido)
@@ -17,6 +19,8 @@
           (allowed-symbols Economico Estandar Lujo) (default Estandar))
 )
 
+;; Perfil inferido por el sistema a partir del Usuario.
+;; Es rellanado por reglas del modulo de deduccion
 (deftemplate Perfil
     (slot motivo_efectivo   (type SYMBOL)   (default Generico))
     (slot max_ciudades      (type INTEGER)  (default 2))
@@ -27,6 +31,7 @@
           (allowed-symbols Bajo Medio Alto)  (default Medio))
 )
 
+;; Destino turístico del catálogo.
 (deftemplate Ciudad
     (slot nombre     (type STRING))
     (slot region     (type SYMBOL)
@@ -38,6 +43,7 @@
     (slot apta_ninos (type SYMBOL) (allowed-symbols si no))
 )
 
+;; Atracción turística asociada a una ciudad.
 (deftemplate LugarVisita
     (slot nombre  (type STRING))
     (slot ciudad  (type STRING))
@@ -46,6 +52,7 @@
     (slot horas   (type INTEGER) (default 2))
 )
 
+;; Alojamiento disponible en una ciudad.
 (deftemplate Alojamiento
     (slot nombre       (type STRING))
     (slot ciudad       (type STRING))
@@ -54,6 +61,7 @@
     (slot apto_ninos   (type SYMBOL) (allowed-symbols si no))
 )
 
+;; Coneccion de transporte entre 2 puntos.
 (deftemplate Transporte
     (slot origen         (type STRING))
     (slot destino        (type STRING))
@@ -62,6 +70,7 @@
     (slot horas_viaje    (type FLOAT))
 )
 
+;; Una ciudad visitada dentro de un plan, con sus costes y detalles de estancia.
 (deftemplate Etapa
     (slot plan_id            (type INTEGER))
     (slot orden              (type INTEGER))
@@ -73,12 +82,14 @@
     (slot coste_transporte   (type FLOAT))
 )
 
+;; Lugar de visita ya asignado a una etapa concreta de un plan.
 (deftemplate VisitaAsignada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
     (slot lugar   (type STRING))
 )
 
+;; Cabecera del plan resultado con coste total, días y estado de construcción.
 (deftemplate PlanViaje
     (slot plan_id     (type INTEGER))
     (slot coste_total (type FLOAT)   (default 0.0))
@@ -87,11 +98,14 @@
           (allowed-symbols Construyendo Completo Fallido) (default Construyendo))
 )
 
+;; Marcador que registra qué ciudades ya han sido incluidas en un plan.
+;; Impide repetir ciudades dentro del mismo plan y entre los dos planes.
 (deftemplate CiudadUsada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
 )
 
+;; Acumulador mutable del estado de construcción de un plan en curso.
 (deftemplate EstadoPlan
     (slot plan_id       (type INTEGER))
     (slot dias_usados   (type INTEGER) (default 0))
@@ -334,6 +348,7 @@
     (assert (fase p1_composicion))
 )
 
+;; P1: Pregunta la composición del grupo.
 (defrule P1_Composicion
     ?f <- (fase p1_composicion)
     =>
@@ -353,6 +368,7 @@
     (assert (fase p2_ninos))
 )
 
+;; P2a: Solo se pregunta por niños si el grupo es Familia o Grupo.
 (defrule P2_Ninos_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(or (eq ?c Familia) (eq ?c Grupo)))
@@ -364,6 +380,7 @@
     (assert (fase p3_motivo))
 )
 
+;; P2b: Si viaja Solo o en Pareja, se asume automáticamente que no hay niños.
 (defrule P2_Ninos_No_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(and (neq ?c Familia) (neq ?c Grupo)))
@@ -373,6 +390,7 @@
     (assert (fase p3_motivo))
 )
 
+;; Pregunta independiente del tipo de grupo
 (defrule P3_Motivo
     ?f <- (fase p3_motivo)
     =>
@@ -392,6 +410,7 @@
     (assert (fase p4_dias))
 )
 
+;; Pregunta independiente del tipo de grupo
 (defrule P4_Dias
     ?f <- (fase p4_dias)
     =>
@@ -402,6 +421,7 @@
     (assert (fase p5_presupuesto))
 )
 
+;; Pregunta independiente del tipo de grupo
 (defrule P5_Presupuesto
     ?f <- (fase p5_presupuesto)
     =>
@@ -412,6 +432,7 @@
     (assert (fase p6_transporte))
 )
 
+;; Pregunta independiente del tipo de grupo
 (defrule P6_Transporte
     ?f <- (fase p6_transporte)
     =>
@@ -429,6 +450,7 @@
     (assert (fase p7_alojamiento))
 )
 
+;; Pregunta independiente del tipo de grupo
 (defrule P7_Alojamiento
     ?f <- (fase p7_alojamiento)
     =>
@@ -452,6 +474,8 @@
 
 ;; CREACIÓN DEL HECHO USUARIO
 
+;; Consolida todas las respuestas (resp_X) en un único hecho Usuario estructurado.
+;; Solo dispara cuando los 7 hechos de respuesta están presentes simultáneamente.
 (defrule Crear_Usuario
     ?f <- (fase crear_usuario)
     (resp_motivo      ?mot)
@@ -487,6 +511,7 @@
     (printout t "[Deduccion] Viaje romantico con ninos -> ajustado a Cultural." crlf)
 )
 
+;; Si no aplica el ajuste anterior, el motivo efectivo es el declarado.
 (defrule Deducir_Motivo_Sin_Cambio
     (fase deduccion)
     (Usuario (motivo ?mot) (con_ninos ?n))
@@ -496,6 +521,7 @@
 )
 
 ;; Deducir distancia del viaje
+;; Radio Corto: <= 5 días. No vale la pena volar >3h para estancias muy cortas.
 (defrule Deducir_Radio_Corto
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 5)))
@@ -503,6 +529,7 @@
     (assert (radio_viaje Corto))
 )
 
+;; Radio Medio: 6-10 días. Permite destinos a distancia Media
 (defrule Deducir_Radio_Medio
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 5) (<= ?d 10))))
@@ -510,6 +537,7 @@
     (assert (radio_viaje Medio))
 )
 
+;; Radio Largo: >10 días. Permite destinos lejanos
 (defrule Deducir_Radio_Largo
     (fase deduccion)
     (Usuario (dias_totales ?d&:(> ?d 10)))
@@ -517,7 +545,8 @@
     (assert (radio_viaje Largo))
 )
 
-;; Deducir número de ciudades
+;; Deducir número de ciudades. 
+;; 1 ciudad, <= 4 dias
 (defrule Deducir_Max_Ciudades_1
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 4)))
@@ -525,6 +554,7 @@
     (assert (max_ciudades 1))
 )
 
+;; 2 ciudades, 5-8 dias
 (defrule Deducir_Max_Ciudades_2
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 4) (<= ?d 8))))
@@ -532,6 +562,7 @@
     (assert (max_ciudades 2))
 )
 
+;; 3 ciudades, 9-13 dias
 (defrule Deducir_Max_Ciudades_3
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 8) (<= ?d 13))))
@@ -539,6 +570,7 @@
     (assert (max_ciudades 3))
 )
 
+;; 4 ciudades, >13 dias
 (defrule Deducir_Max_Ciudades_4
     (fase deduccion)
     (Usuario (dias_totales ?d&:(> ?d 13)))
@@ -547,6 +579,7 @@
 )
 
 ;; Nivel de presupuesto
+;; Presupuesto bajo, <800 eur
 (defrule Deducir_Presupuesto_Bajo
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(<= ?p 800.0)))
@@ -554,6 +587,7 @@
     (assert (presupuesto_nivel Bajo))
 )
 
+;; Presupuesto medio, 800-2500 eur
 (defrule Deducir_Presupuesto_Medio
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(and (> ?p 800.0) (<= ?p 2500.0))))
@@ -561,6 +595,7 @@
     (assert (presupuesto_nivel Medio))
 )
 
+;; Presupuesto alto, > 2500 eur
 (defrule Deducir_Presupuesto_Alto
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(> ?p 2500.0)))
@@ -595,6 +630,7 @@
 
 ;; PLAN 1
 
+;; Inicializa el acumulador EstadoPlan y lanza la búsqueda de la primera ciudad.
 (defrule Iniciar_Plan1
     ?f <- (fase construir_plan_1)
     =>
@@ -640,7 +676,12 @@
     (assert (fase ampliar_p1))
 )
 
-;; Ampliamos el plan 1 con ciudades adicionales
+;; Amplía el plan con ciudades adicionales conectadas por transporte desde la
+;; última ciudad visitada. Condiciones de parada:
+;;   - ?oa >= max_ciudades: ya se alcanzó el máximo de ciudades
+;;   - ?du >= dias_totales - 1: no quedan días suficientes
+;;   - coste acumulado > 90% del presupuesto: reserva para el vuelo de vuelta
+;; Se retracta EstadoPlan y se reaserta actualizado (patrón acumulador).
 (defrule Ampliar_P1
     ?f  <- (fase ampliar_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -677,7 +718,7 @@
     (assert (fase ampliar_p1))
 )
 
-;; Cerramos el plan 1 y añadimos el vuelo de vuelta
+;; Cerramos el plan 1 y añadimos el vuelo de vuelta al origen
 (defrule Cerrar_P1
     ?f  <- (fase ampliar_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -721,7 +762,8 @@
     (assert (fase elegir_ciudad1_p2))
 )
 
-;; Primera ciudad del plan 2
+;; Plan 2: misma lógica que Plan 1 pero filtra además las ciudades del Plan 1,
+;; garantizando que ambas opciones sean genuinamente diferentes.
 (defrule Elegir_Ciudad1_P2
     ?f  <- (fase elegir_ciudad1_p2)
     ?ep <- (EstadoPlan (plan_id 2) (dias_usados ?du) (coste_acum ?ca)
@@ -822,6 +864,10 @@
 
 ;; ASIGNACIÓN DE LUGARES A VISITAR
 
+;; Asigna lugares de visita a cada etapa por afinidad temática con el motivo efectivo.
+;; Cultural y Naturaleza se consideran de interés universal y siempre se incluyen.
+;; El límite de 3 visitas por ciudad se implementa con negación anidada:
+;; la regla no dispara si ya existen 3 visitas distintas para esa ciudad y plan.
 (defrule Asignar_Visita
     (fase asignar_visitas)
     (Perfil (motivo_efectivo ?mot))
@@ -839,6 +885,7 @@
     (assert (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?lv)))
 )
 
+;; Cuando no quedan más visitas por asignar, pasa a la fase de presentación.
 (defrule Fin_Visitas
     ?f <- (fase asignar_visitas)
     =>
