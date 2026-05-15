@@ -1,7 +1,6 @@
 ;; ONTOLOGÍA
 
-;; Datos recogidos directamente del usuario mediante las preguntas del sistema.
-;; Todos los slots tienen default para evitar errores si alguna respuesta falla.
+;; Clase USUARIO
 (deftemplate Usuario
     (slot motivo          (type SYMBOL)
           (allowed-symbols Romantico Cultural Relax Diversion Desconocido)
@@ -19,7 +18,8 @@
           (allowed-symbols Economico Estandar Lujo) (default Estandar))
 )
 
-;; Perfil deducido por el sistema a partir del Usuario
+;; Clase PERFIL
+;; El perfil lo deduce el sistema a partir del los datos del usuario
 (deftemplate Perfil
     (slot motivo_efectivo   (type SYMBOL)   (default Generico))
     (slot max_ciudades      (type INTEGER)  (default 2))
@@ -30,7 +30,7 @@
           (allowed-symbols Bajo Medio Alto)  (default Medio))
 )
 
-;; Destino turístico del catálogo
+;; Clase CIUDAD
 (deftemplate Ciudad
     (slot nombre     (type STRING))
     (slot region     (type SYMBOL)
@@ -42,7 +42,8 @@
     (slot apta_ninos (type SYMBOL) (allowed-symbols si no))
 )
 
-;; Atracción turística asociada a una ciudad
+;; Clase LUGAR VISITA
+;; Son los lugares de interés que tienen las ciudades
 (deftemplate LugarVisita
     (slot nombre  (type STRING))
     (slot ciudad  (type STRING))
@@ -51,7 +52,7 @@
     (slot horas   (type INTEGER) (default 2))
 )
 
-;; Alojamiento disponible en una ciudad
+;; Clase ALOJAMIENTO
 (deftemplate Alojamiento
     (slot nombre       (type STRING))
     (slot ciudad       (type STRING))
@@ -60,7 +61,8 @@
     (slot apto_ninos   (type SYMBOL) (allowed-symbols si no))
 )
 
-;; Coneccion de transporte entre 2 puntos
+;; Clase TRANSPORTE
+;; Es la forma de moverse entre ciudades
 (deftemplate Transporte
     (slot origen         (type STRING))
     (slot destino        (type STRING))
@@ -69,7 +71,8 @@
     (slot horas_viaje    (type FLOAT))
 )
 
-;; Una ciudad visitada dentro de un plan, con sus costes y detalles de estancia
+;; Clase ETAPA
+;; Representa una estada en una ciudad
 (deftemplate Etapa
     (slot plan_id            (type INTEGER))
     (slot orden              (type INTEGER))
@@ -81,14 +84,15 @@
     (slot coste_transporte   (type FLOAT))
 )
 
-;; Lugar de visita ya asignado a una etapa concreta de un plan
+;; Clase VISITA ASIGNADA
+;; Representa un lugar que visita durante una estada en una ciudad concreta
 (deftemplate VisitaAsignada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
     (slot lugar   (type STRING))
 )
 
-;; Cabecera del plan resultado con coste total, días y estado de construcción
+;; Clase PLAN VIAJE
 (deftemplate PlanViaje
     (slot plan_id     (type INTEGER))
     (slot coste_total (type FLOAT)   (default 0.0))
@@ -97,14 +101,15 @@
           (allowed-symbols Construyendo Completo Fallido) (default Construyendo))
 )
 
-;; Marcador que registra qué ciudades ya han sido incluidas en un plan
-;; Impide repetir ciudades dentro del mismo plan y entre los dos planes
+;; Clase CIUDAD USADA
+;; Sirve para marcar las ciudades ya visitadas
 (deftemplate CiudadUsada
     (slot plan_id (type INTEGER))
     (slot ciudad  (type STRING))
 )
 
-;; Acumulador mutable del estado de construcción de un plan en curso
+;; Clase ESTADO PLAN
+;; Sirve para saber como llevamos el plan de viaje en cada momento
 (deftemplate EstadoPlan
     (slot plan_id       (type INTEGER))
     (slot dias_usados   (type INTEGER) (default 0))
@@ -112,7 +117,6 @@
     (slot orden_actual  (type INTEGER) (default 0))
     (slot ultima_ciudad (type STRING)  (default "Origen"))
 )
-
 
 ;; BASE DE CONOCIMIENTO
 
@@ -244,7 +248,6 @@
     (Alojamiento (nombre "Hotel Times Square 3*")   (ciudad "Nueva York") (categoria Estandar)  (precio_noche 180.0) (apto_ninos si))
 
     ;; TRANSPORTES
-    ;; Desde el origen del viajero
     (Transporte (origen "Origen") (destino "Paris")      (tipo Avion) (precio_persona 120.0) (horas_viaje 2.0))
     (Transporte (origen "Origen") (destino "Santorini")  (tipo Avion) (precio_persona 160.0) (horas_viaje 3.5))
     (Transporte (origen "Origen") (destino "Lisboa")     (tipo Avion) (precio_persona 100.0) (horas_viaje 2.5))
@@ -265,7 +268,7 @@
     (Transporte (origen "Origen") (destino "Tokio")      (tipo Avion) (precio_persona 700.0) (horas_viaje 12.0))
     (Transporte (origen "Origen") (destino "Nueva York") (tipo Avion) (precio_persona 500.0) (horas_viaje 9.0))
     (Transporte (origen "Origen") (destino "Bangkok")    (tipo Avion) (precio_persona 600.0) (horas_viaje 11.0))
-    ;; Entre ciudades
+
     (Transporte (origen "Paris")     (destino "Roma")       (tipo Avion) (precio_persona 90.0)  (horas_viaje 2.0))
     (Transporte (origen "Paris")     (destino "Roma")       (tipo Tren)  (precio_persona 110.0) (horas_viaje 11.0))
     (Transporte (origen "Paris")     (destino "Amsterdam")  (tipo Avion) (precio_persona 80.0)  (horas_viaje 1.5))
@@ -307,7 +310,7 @@
     (Transporte (origen "Edimburgo") (destino "Amsterdam")  (tipo Avion) (precio_persona 90.0)  (horas_viaje 2.0))
     (Transporte (origen "Edimburgo") (destino "Paris")      (tipo Avion) (precio_persona 90.0)  (horas_viaje 2.0))
     (Transporte (origen "Dubrovnik") (destino "Roma")       (tipo Avion) (precio_persona 90.0)  (horas_viaje 2.0))
-    ;; Vuelos de vuelta al origen
+
     (Transporte (origen "Paris")     (destino "Origen") (tipo Avion) (precio_persona 120.0) (horas_viaje 2.0))
     (Transporte (origen "Roma")      (destino "Origen") (tipo Avion) (precio_persona 130.0) (horas_viaje 2.5))
     (Transporte (origen "Amsterdam") (destino "Origen") (tipo Avion) (precio_persona 140.0) (horas_viaje 2.5))
@@ -328,7 +331,7 @@
     (Transporte (origen "Nueva York")(destino "Origen") (tipo Avion) (precio_persona 500.0) (horas_viaje 9.0))
     (Transporte (origen "Bangkok")   (destino "Origen") (tipo Avion) (precio_persona 600.0) (horas_viaje 11.0))
 
-    ;; Punto de entrada al sistema
+    ;; Hacemos una regla para poder entrar al sistema
     (fase inicio)
 )
 
@@ -347,7 +350,7 @@
     (assert (fase p1_composicion))
 )
 
-;; P1: Pregunta la composición del grupo
+;; P1: pregunta la composición del grupo
 (defrule P1_Composicion
     ?f <- (fase p1_composicion)
     =>
@@ -367,7 +370,7 @@
     (assert (fase p2_ninos))
 )
 
-;; P2a: Solo se pregunta por niños si el grupo es Familia o Grupo
+;; P2a: Solo se pregunta por niños si la composición es "Familia" o "Grupo"
 (defrule P2_Ninos_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(or (eq ?c Familia) (eq ?c Grupo)))
@@ -379,7 +382,7 @@
     (assert (fase p3_motivo))
 )
 
-;; P2b: Si viaja Solo o en Pareja, se asume automáticamente que no hay niños
+;; P2b: Si la composición es "Solo" || "Pareja", se asumimos que no hay niños
 (defrule P2_Ninos_No_Aplica
     ?f <- (fase p2_ninos)
     (resp_composicion ?c&:(and (neq ?c Familia) (neq ?c Grupo)))
@@ -389,7 +392,7 @@
     (assert (fase p3_motivo))
 )
 
-;; Pregunta independiente del tipo de grupo
+;; P3: pregunta por el motivo del viaje
 (defrule P3_Motivo
     ?f <- (fase p3_motivo)
     =>
@@ -409,7 +412,7 @@
     (assert (fase p4_dias))
 )
 
-;; Pregunta independiente del tipo de grupo
+;; P4: pregunta por los días del viaje
 (defrule P4_Dias
     ?f <- (fase p4_dias)
     =>
@@ -420,7 +423,7 @@
     (assert (fase p5_presupuesto))
 )
 
-;; Pregunta independiente del tipo de grupo
+;; P5: pregunta el presupuesto del viajero
 (defrule P5_Presupuesto
     ?f <- (fase p5_presupuesto)
     =>
@@ -431,7 +434,7 @@
     (assert (fase p6_transporte))
 )
 
-;; Pregunta independiente del tipo de grupo
+;; P6: pregunta por los medios de transporte preferentes
 (defrule P6_Transporte
     ?f <- (fase p6_transporte)
     =>
@@ -449,7 +452,7 @@
     (assert (fase p7_alojamiento))
 )
 
-;; Pregunta independiente del tipo de grupo
+;; P7: pregunta por la clase de alojamiento preferente
 (defrule P7_Alojamiento
     ?f <- (fase p7_alojamiento)
     =>
@@ -471,10 +474,9 @@
 )
 
 
-;; CREACIÓN DEL HECHO USUARIO
+;; CREACIÓN USUARIO
 
-;; Consolida todas las respuestas (resp_X) en un único hecho Usuario estructurado
-;; Solo dispara cuando los 7 hechos de respuesta están presentes simultáneamente
+;; Encapsulamos todas las preguntas en una sola clase
 (defrule Crear_Usuario
     ?f <- (fase crear_usuario)
     (resp_motivo      ?mot)
@@ -499,9 +501,10 @@
 )
 
 
-;; DEDUCIR PERFIL
+;; DEDUCCIÓN DEL PERFIL
+;; Aplicamos el conocimiento adquirido sobre el usuario para crearle un perfil de viajero
 
-;; Regla: viaje romántico con niños -> destinos culturales/familiares
+;; Si viaja cin niños y es un viaje de tipo romantico se ajusta a cultural
 (defrule Deducir_Ajuste_Romantico_Ninos
     (fase deduccion)
     (Usuario (motivo Romantico) (con_ninos si))
@@ -510,7 +513,7 @@
     (printout t "[Deduccion] Viaje romantico con ninos -> ajustado a Cultural." crlf)
 )
 
-;; Si no aplica el ajuste anterior, el motivo efectivo es el declarado
+;; Si no se aplica el motivo de antes lo skipeamos
 (defrule Deducir_Motivo_Sin_Cambio
     (fase deduccion)
     (Usuario (motivo ?mot) (con_ninos ?n))
@@ -519,8 +522,8 @@
     (assert (motivo_efectivo ?mot))
 )
 
-;; Deducir distancia del viaje
-;; Radio Corto: <= 5 días. No vale la pena volar >3h para estancias muy cortas
+;; Deducción de la distancia del viaje
+;; Radio corto (<= 5d)
 (defrule Deducir_Radio_Corto
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 5)))
@@ -528,7 +531,7 @@
     (assert (radio_viaje Corto))
 )
 
-;; Radio Medio: 6-10 días. Permite destinos a distancia Media
+;; Radio medio (6d - 10d)
 (defrule Deducir_Radio_Medio
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 5) (<= ?d 10))))
@@ -536,7 +539,7 @@
     (assert (radio_viaje Medio))
 )
 
-;; Radio Largo: >10 días. Permite destinos lejanos
+;; Radio largo (>10d)
 (defrule Deducir_Radio_Largo
     (fase deduccion)
     (Usuario (dias_totales ?d&:(> ?d 10)))
@@ -544,8 +547,8 @@
     (assert (radio_viaje Largo))
 )
 
-;; Deducir número de ciudades. 
-;; 1 ciudad, <= 4 dias
+;; Deducción del número de ciudades a visitar 
+;; 1 ciudad (<= 4d)
 (defrule Deducir_Max_Ciudades_1
     (fase deduccion)
     (Usuario (dias_totales ?d&:(<= ?d 4)))
@@ -553,7 +556,7 @@
     (assert (max_ciudades 1))
 )
 
-;; 2 ciudades, 5-8 dias
+;; 2 ciudades (5d - 8d)
 (defrule Deducir_Max_Ciudades_2
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 4) (<= ?d 8))))
@@ -561,7 +564,7 @@
     (assert (max_ciudades 2))
 )
 
-;; 3 ciudades, 9-13 dias
+;; 3 ciudades (9d -13d)
 (defrule Deducir_Max_Ciudades_3
     (fase deduccion)
     (Usuario (dias_totales ?d&:(and (> ?d 8) (<= ?d 13))))
@@ -569,7 +572,7 @@
     (assert (max_ciudades 3))
 )
 
-;; 4 ciudades, >13 dias
+;; 4 ciudades (>13d)
 (defrule Deducir_Max_Ciudades_4
     (fase deduccion)
     (Usuario (dias_totales ?d&:(> ?d 13)))
@@ -577,8 +580,8 @@
     (assert (max_ciudades 4))
 )
 
-;; Nivel de presupuesto
-;; Presupuesto bajo, <800 eur
+;; Deducción del nivel de presupuesto 
+;; Presupuesto bajo (< 800€)
 (defrule Deducir_Presupuesto_Bajo
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(<= ?p 800.0)))
@@ -586,7 +589,7 @@
     (assert (presupuesto_nivel Bajo))
 )
 
-;; Presupuesto medio, 800-2500 eur
+;; Presupuesto medio (800€ - 2500€)
 (defrule Deducir_Presupuesto_Medio
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(and (> ?p 800.0) (<= ?p 2500.0))))
@@ -594,7 +597,7 @@
     (assert (presupuesto_nivel Medio))
 )
 
-;; Presupuesto alto, > 2500 eur
+;; Presupuesto alto (> 2500€)
 (defrule Deducir_Presupuesto_Alto
     (fase deduccion)
     (Usuario (presupuesto_max ?p&:(> ?p 2500.0)))
@@ -602,7 +605,7 @@
     (assert (presupuesto_nivel Alto))
 )
 
-;; Deduce el Perfil cuando todas las preguntas han sido contestadas
+;; Completamos el perfil al acabar las deducciones
 (defrule Consolidar_Perfil
     ?f <- (fase deduccion)
     (motivo_efectivo   ?mot)
@@ -629,7 +632,7 @@
 
 ;; PLAN 1
 
-;; Inicializa el acumulador EstadoPlan y lanza la búsqueda de la primera ciudad.
+;; Inicializalizamos EstadoPlan y lanzamos la búsqueda de la 1a ciudad
 (defrule Iniciar_Plan1
     ?f <- (fase construir_plan_1)
     =>
@@ -640,7 +643,11 @@
     (assert (fase elegir_ciudad1_p1))
 )
 
-;; La primera ciudad del plan 1 coincide con el motivo del perfil
+;; Buscamos la 1a ciudad 
+;; - Leemos el perfil y las restricciones y buscamos una ciudad que cumpla: (tematica, distancia, niños, no visitada)
+;; - Sumamos costes y vemos que esten dentro del presupuesto
+;; - Actualizamos EstadoPlan
+
 (defrule Elegir_Ciudad1_P1
     ?f  <- (fase elegir_ciudad1_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -675,12 +682,11 @@
     (assert (fase ampliar_p1))
 )
 
-;; Amplía el plan con ciudades adicionales conectadas por transporte desde la
-;; última ciudad visitada. Condiciones de parada:
-;;   - ?oa >= max_ciudades: ya se alcanzó el máximo de ciudades
-;;   - ?du >= dias_totales - 1: no quedan días suficientes
-;;   - coste acumulado > 90% del presupuesto: reserva para el vuelo de vuelta
-;; Se retracta EstadoPlan y se reaserta actualizado (patrón acumulador).
+;; Agregamos ciudades extra al plan que estén conectadas con la 1a
+;; Paramos cuando:
+;; - llegamos al límite de ciudades
+;; - no quedan días de visita
+;; - el coste acumulado > 90% del presupuesto (guardamos dinero para volver)
 (defrule Ampliar_P1
     ?f  <- (fase ampliar_p1)
     ?ep <- (EstadoPlan (plan_id 1) (dias_usados ?du) (coste_acum ?ca)
@@ -698,12 +704,10 @@
     (not (CiudadUsada (plan_id 1) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    ;; bind no puede usarse en el LHS: las condiciones se evaluan inline en test
     (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
     (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
-    ;; Una vez en el RHS calculamos dias_nueva con bind normalmente
     (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 1) (ciudad ?c)))
@@ -734,8 +738,8 @@
     (printout t crlf)
     (assert (fase construir_plan_2))
 )
-
-;; Sin solución para el plan 1
+;; STEVE TRABAJA
+;; No hay solución para el plan 1
 (defrule SinSolucion_P1
     ?f <- (fase elegir_ciudad1_p1)
     (not (Etapa (plan_id 1)))
@@ -751,8 +755,9 @@
 )
 
 
-;; CONSTRUCCIÓN DEL PLAN 2 (diferente del 1)
+;; PLAN 2
 
+;; Inicializalizamos EstadoPlan y lanzamos la búsqueda de la 1a ciudad (igual que en el 1)
 (defrule Iniciar_Plan2
     ?f <- (fase construir_plan_2)
     =>
@@ -763,8 +768,7 @@
     (assert (fase elegir_ciudad1_p2))
 )
 
-;; Plan 2: misma lógica que Plan 1 pero filtra además las ciudades del Plan 1,
-;; garantizando que ambas opciones sean genuinamente diferentes.
+;; Hacemos lo mismo que en el plan 1 pero con la condición extra de que la ciudad no puede estar en el plan 1
 (defrule Elegir_Ciudad1_P2
     ?f  <- (fase elegir_ciudad1_p2)
     ?ep <- (EstadoPlan (plan_id 2) (dias_usados ?du) (coste_acum ?ca)
@@ -818,12 +822,10 @@
     (not (CiudadUsada (plan_id 2) (ciudad ?c)))
     (Alojamiento (ciudad ?c) (categoria ?cat) (precio_noche ?pn)
                  (nombre ?na) (apto_ninos ?an2&:(or (eq ?nin no) (eq ?an2 si))))
-    ;; bind no puede usarse en el LHS: las condiciones se evaluan inline en test
     (test (> (max 2 (min ?dpc (- ?dtotal ?du 1))) 0))
     (test (<= (+ ?ca ?pt (* ?pn (max 2 (min ?dpc (- ?dtotal ?du 1))))) (* ?pmax 0.9)))
     =>
     (retract ?f ?ep)
-    ;; Una vez en el RHS calculamos dias_nueva con bind normalmente
     (bind ?dias_nueva (max 2 (min ?dpc (- ?dtotal ?du 1))))
     (bind ?no (+ ?oa 1))
     (assert (CiudadUsada (plan_id 2) (ciudad ?c)))
@@ -854,7 +856,7 @@
     (assert (fase asignar_visitas))
 )
 
-;; Sin segunda alternativa de viaje
+;; No hay alternativas diferentes del 1
 (defrule SinSolucion_P2
     ?f <- (fase elegir_ciudad1_p2)
     (not (Etapa (plan_id 2)))
@@ -865,12 +867,11 @@
 )
 
 
-;; ASIGNACIÓN DE LUGARES A VISITAR
+;; ASIGNACIÓN DE LOS LUGARES A VISITAR
 
-;; Asigna lugares de visita a cada etapa por afinidad temática con el motivo efectivo
-;; Cultural y Naturaleza se consideran de interés universal y siempre se incluyen
-;; El límite de 3 visitas por ciudad se implementa con negación anidada:
-;; la regla no dispara si ya existen 3 visitas distintas para esa ciudad y plan
+;; Asignamos lugares a visitar a los planes
+;; "Cultural" &&  "Naturaleza" son universales y siempre se incluyen
+;; la regla no aplica si ya existen 3 visitas distintas para esa ciudad y plan
 (defrule Asignar_Visita
     (fase asignar_visitas)
     (Perfil (motivo_efectivo ?mot))
@@ -878,7 +879,6 @@
     (LugarVisita (nombre ?lv) (ciudad ?c) (interes ?int))
     (test (or (eq ?int ?mot) (eq ?int Cultural) (eq ?int Naturaleza)))
     (not (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?lv)))
-    ;; Límite de 3 visitas por ciudad
     (not (and (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?a))
               (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?b))
               (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?cc))
@@ -888,7 +888,7 @@
     (assert (VisitaAsignada (plan_id ?pid) (ciudad ?c) (lugar ?lv)))
 )
 
-;; Cuando no quedan más visitas por asignar, pasa a la fase de presentación.
+;; Cuando no quedan más visitas por asignar pasamos a presentación de resultados
 (defrule Fin_Visitas
     ?f <- (fase asignar_visitas)
     =>
@@ -898,6 +898,7 @@
 
 ;; RESULTADOS
 
+;; Cabecera del output
 (defrule Presentar_Cabecera
     ?f <- (fase presentar_resultados)
     =>
@@ -908,6 +909,7 @@
     (assert (fase mostrar_plan 1))
 )
 
+;; Mostramos la cabecera del plan
 (defrule Mostrar_Cabecera_Plan
     ?f <- (fase mostrar_plan ?pid)
     (PlanViaje (plan_id ?pid) (coste_total ?ct) (num_dias ?nd) (estado Completo))
@@ -921,6 +923,7 @@
     (assert (fase mostrar_etapas ?pid 1))
 )
 
+;; Mostramos las etapas del plan
 (defrule Mostrar_Etapa
     ?f <- (fase mostrar_etapas ?pid ?ord)
     (Etapa (plan_id ?pid) (orden ?ord) (ciudad ?c) (dias ?d)
@@ -941,6 +944,9 @@
     (assert (fase mostrar_etapas ?pid (+ ?ord 1)))
 )
 
+;; Cambiamos de plan o vamos a preferencias
+;; Si estamos en plan 1 -> plan 2
+;; Si estamos en plan 2 -> preferencias
 (defrule Fin_Etapas
     ?f <- (fase mostrar_etapas ?pid ?ord)
     (not (Etapa (plan_id ?pid) (orden ?ord)))
@@ -960,6 +966,7 @@
     (assert (fase mostrar_preferencias))
 )
 
+;; Mostramos el prefil del usuario
 (defrule Mostrar_Preferencias
     ?f <- (fase mostrar_preferencias)
     (Usuario (motivo ?mot) (composicion ?comp) (con_ninos ?nin)
