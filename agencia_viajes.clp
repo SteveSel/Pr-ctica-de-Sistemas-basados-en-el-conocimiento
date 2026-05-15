@@ -738,7 +738,7 @@
     (printout t crlf)
     (assert (fase construir_plan_2))
 )
-;; STEVE TRABAJA
+
 ;; No hay solución para el plan 1
 (defrule SinSolucion_P1
     ?f <- (fase elegir_ciudad1_p1)
